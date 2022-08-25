@@ -76,8 +76,8 @@
       position: absolute;
       width: 250px;
       height: 250px;
-      bottom: 100px;
-      left: 50px;
+      bottom: 20px;
+      left: 20px;
       z-index: 200000;
     }
 
@@ -117,11 +117,18 @@
     .annotation-desc {
       font: normal 14px arial, serif;
     }
+
+    .reset-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+    }
   </style>
 </head>
 
 <body>
   <canvas id="myCanvas"></canvas>
+  <button class="btn btn-primary reset-btn" >Reset Camera</button>
   <canvas id="myAxisGizmoCanvas"></canvas>
 </body>
 <script id="source" type="module">
@@ -152,7 +159,6 @@
   viewer.camera.look = [1.40, 3.72, 8.89]; //  distanza assoluta dal punto di riferimento (centro)
   viewer.camera.up = [-0.01, 1, 0.039]; //rotazione camera
 
-
   viewer.camera.on("up", (up) => {
     console.log("up: " + up)
   })
@@ -162,6 +168,7 @@
   viewer.camera.on("eye", (eye) => {
     console.log("eye: " + eye)
   })
+
   const xktLoader = new XKTLoaderPlugin(viewer)
 
   new AxisGizmoPlugin(viewer, {
@@ -240,39 +247,30 @@
 
   var prevAnnotationClicked = null;
 
-  annotations.on('markerClicked', (annotation) => {
-    annotation.setLabelShown(!annotation.getLabelShown())
-    viewer.cameraFlight.flyTo(annotation)
-  })
-
-
-  // annotations.on("markerClicked", (annotation) => {
-  //   if (prevAnnotationClicked) {
-  //     prevAnnotationClicked.setLabelShown(false);
-  //     prevAnnotationClicked = null
-  //   } else{
-  //   annotation.setLabelShown(true);
-  //   viewer.cameraFlight.flyTo(annotation);
-  //   prevAnnotationClicked = annotation;
-  //   }
-
-  // });
-
-  //------------------------------------------------------------------------------------------------------------------
-  // Create a mesh with box shape
-  //------------------------------------------------------------------------------------------------------------------
-
-  new Mesh(viewer.scene, {
-    geometry: new ReadableGeometry(viewer.scene, buildBoxGeometry({
-      xSize: 1,
-      ySize: 1,
-      zSize: 1
-    }))
+  annotations.on("markerClicked", (annotation) => {
+    if (prevAnnotationClicked) {
+      prevAnnotationClicked.setLabelShown(false);
+    }
+    annotation.setLabelShown(true);
+    cameraFlight.flyTo({...annotation, duration:0.25});
+    prevAnnotationClicked = annotation;
   });
 
 
-  model.on('loaded', () => {
+  
+// Reset camera view and annotations 
+const button = document.querySelector('button');
+button.addEventListener('click', (event) => {
+  viewer.cameraFlight.flyTo({
+   eye: [-10, 42, 100],
+   look: [-1.40, 3.72, 8.89],
+   up: [0.0, 0.9, -0.4],
+   duration: 0.5 // Default, seconds
+})
+ prevAnnotationClicked.setLabelShown(false);
+});
 
+  model.on('loaded', () => {
     viewer.cameraFlight.flyTo(model);
 
     //------------------------------------------------------------------------------------------------------------------
@@ -372,11 +370,11 @@
         eye = [x + (-x), y, z];
         up = [-0.2, 1, 0]
       } else if (item.orientation === "SOUTH") {
-        let z1 = z * 3;      
+        let z1 = z * 3;
         eye = [x, y, z1]
 
-      } else if (item.orientation === "NORTH") {       
-          eye = [x, y, z / 10];
+      } else if (item.orientation === "NORTH") {
+        eye = [x, y, z / 10];
       }
       else if (item.orientation === "EAST") {
         eye = [x - 3, y, z];
